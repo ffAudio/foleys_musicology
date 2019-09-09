@@ -38,6 +38,8 @@
 #include <juce_graphics/juce_graphics.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include <unordered_map>
+
 #include "Fonts/include/smufl.h"
 #include "Fonts/include/bravura.h"
 #include "Fonts/include/petaluma.h"
