@@ -17,9 +17,14 @@ public:
 
      @param typeface    the typeface (from an otf or ttf file)
      @param metadata    the font metadata from the json file provided with the font
+     @param factor      the factor, that the glyphs need to be scaled additionally to noteSize
      */
-    void setFont (juce::Typeface::Ptr typeface, const juce::var& metadata);
+    void setFont (juce::Typeface::Ptr typeface, const juce::var& metadata, float factor);
 
+    /**
+     Set the note size
+     */
+    void setNoteSize (float size);
 
 private:
 
@@ -89,6 +94,11 @@ private:
     float tupletBracketThickness     = 0.16f;
 
     std::unordered_map<smufl::Glyph, juce::Rectangle<float>> glyphBoxes;
+
+    std::unordered_map<smufl::Glyph, juce::Point<float>> stemUpSE;
+    std::unordered_map<smufl::Glyph, juce::Point<float>> stemDownNW;
+    std::unordered_map<smufl::Glyph, juce::Point<float>> stemUpNE;
+    std::unordered_map<smufl::Glyph, juce::Point<float>> stemDownSW;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ScoreRenderer)
 };

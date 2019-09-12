@@ -120,8 +120,34 @@ void ScoreRenderer::drawNotes (juce::Graphics& g, juce::Point<float> centerLine,
     auto distancePerQuarter = xPositions.getLength() / 4.0f;
 
     for (int i = 0; i < 4; ++i)
-        g.fillPath (note, juce::AffineTransform::scale (factor * noteSize)
-                                                .translated (centerLine + juce::Point<float> (xPositions.getStart() + i * distancePerQuarter, 0.0f)));
+    {
+        auto position = centerLine + juce::Point<float> (xPositions.getStart() + i * distancePerQuarter, 0.0f);
+        g.fillPath (note, juce::AffineTransform::scale (factor * noteSize).translated (position));
+
+        // staff up
+        {
+            const auto& anchor = stemUpSE.find (smufl::GnoteheadBlack);
+            if (anchor != stemUpSE.cend())
+            {
+                const auto p = anchor->second;
+                g.fillRect (position.getX() + noteSize * (p.getX() - stemThickness),
+                            position.getY() - noteSize * (p.getY() + 3.5f),
+                            stemThickness * noteSize, 3.5f * noteSize);
+            }
+        }
+
+        // staff down
+        {
+            const auto& anchor = stemDownNW.find (smufl::GnoteheadBlack);
+            if (anchor != stemDownNW.cend())
+            {
+                const auto p = anchor->second;
+                g.fillRect (position.getX() + noteSize * (p.getX()),
+                            position.getY() - noteSize * (p.getY()),
+                            stemThickness * noteSize, 3.5f * noteSize);
+            }
+        }
+    }
 
     g.fillRect (centerLine.getX() + xPositions.getEnd(),
                 centerLine.getY() - 2.0f * noteSize,
@@ -129,9 +155,10 @@ void ScoreRenderer::drawNotes (juce::Graphics& g, juce::Point<float> centerLine,
                 4.0f * noteSize);
 }
 
-void ScoreRenderer::setFont (juce::Typeface::Ptr typefaceToUse, const juce::var& metadata)
+void ScoreRenderer::setFont (juce::Typeface::Ptr typefaceToUse, const juce::var& metadata, float factorToUse)
 {
     typeface = typefaceToUse;
+    factor = factorToUse;
 
     // engraving defaults
     const auto& defaults = metadata ["engravingDefaults"];
@@ -183,11 +210,49 @@ void ScoreRenderer::setFont (juce::Typeface::Ptr typefaceToUse, const juce::var&
         }
         else
         {
-            DBG ("No glyph bounding box: " << smufl::glyphIDs [glyph]);
+            // Use this to verify your metadata. You can ignore glyphs, that the renderer is not using.
+            // DBG ("No glyph bounding box: " << smufl::glyphIDs [glyph]);
+        }
+    }
+
+    // glyph anchors
+    stemUpSE.clear();
+    stemDownNW.clear();
+    stemUpNE.clear();
+    stemDownSW.clear();
+
+    std::unordered_map<juce::String, smufl::Glyph> glyphMap;
+    for (int i=0; i < int (smufl::LAST_GLYPH); ++i)
+        glyphMap [smufl::glyphIDs [i]] = smufl::Glyph (i);
+
+    const auto& anchors = metadata ["glyphsWithAnchors"];
+    if (auto* object = anchors.getDynamicObject())
+    {
+        for (const auto& anchor : object->getProperties())
+        {
+            const auto& it = glyphMap.find (anchor.name.toString());
+            if (it != glyphMap.end())
+            {
+                const auto& upse = anchor.value ["stemUpSE"];
+                if (upse.isArray()) stemUpSE [it->second] = juce::Point<float> (float (upse [0]), float (upse [1]));
+
+                const auto& downnw = anchor.value ["stemDownNW"];
+                if (downnw.isArray()) stemDownNW [it->second] = juce::Point<float> (float (downnw [0]), float (downnw [1]));
+
+                const auto& upne = anchor.value ["stemUpNE"];
+                if (upne.isArray()) stemUpNE [it->second] = juce::Point<float> (float (upne [0]), float (upne [1]));
+
+                const auto& downsw = anchor.value ["stemDownSW"];
+                if (downsw.isArray()) stemDownSW [it->second] = juce::Point<float> (float (downsw [0]), float (downsw [1]));
+            }
         }
     }
 }
 
+void ScoreRenderer::setNoteSize (float size)
+{
+    noteSize = size;
+}
 
 bool ScoreRenderer::getGlyph (smufl::Glyph glyph, juce::Path& path)
 {
