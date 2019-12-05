@@ -15,74 +15,89 @@ void ScoreRenderer::drawHarmonicStaff (juce::Graphics& g, juce::Rectangle<float>
     const auto centerLine = juce::Point<float> (bounds.getX(), bounds.getCentreY());
     auto xPosition = 0.0f;
 
-    drawClef (g, smufl::GcClef, centerLine, xPosition);
+    juce::ValueTree v;
+    Score::Measure measure (v);
+    measure.clef = Score::CClef;
+    measure.transpose = 0;
+    measure.fifth = -3;
+
+    drawClef (g, measure, centerLine, xPosition);
     xPosition += beamSpacing * noteSize;
 
-    // g-clef: transpose 0 / f-clef: transpose 5 / c-clef: transpose -1
-    drawAccidentals (g, -6, -1, centerLine, xPosition);
+    drawAccidentals (g, measure, centerLine, xPosition);
     xPosition += beamSpacing * noteSize;
 
     drawNotes (g, centerLine, { xPosition, xPosition + 250.0f });
 }
 
-void ScoreRenderer::drawClef (juce::Graphics& g, smufl::Glyph type, juce::Point<float> centerLine, float& xPosition)
+void ScoreRenderer::drawClef (juce::Graphics& g, const Score::Measure& measure, juce::Point<float> centerLine, float& xPosition)
 {
-    juce::Path clef;
-    getGlyph (type, clef);
-    float offset = 0.0f;
-    switch (type)
+    float        offset = 0.0f;
+    juce::Path   path;
+    smufl::Glyph glyph;
+
+    switch (measure.clef)
     {
-        case smufl::GgClef:
-        case smufl::GgClef8va:
-        case smufl::GgClef8vb:
-        case smufl::GgClef8vbOld:
-        case smufl::GgClef8vbCClef:
-        case smufl::GgClef8vbParens:
-        case smufl::GgClef15ma:
-        case smufl::GgClef15mb:
-        case smufl::GgClefLigatedNumberBelow:
-        case smufl::GgClefLigatedNumberAbove:
-        case smufl::GgClefArrowUp:
-        case smufl::GgClefArrowDown:
+        case Score::GClef:
             offset = noteSize;
+            if (measure.octave == -2)
+                glyph = smufl::GgClef15mb;
+            else if (measure.octave == -1)
+                glyph = smufl::GgClef8vb;
+            else if (measure.octave == 1)
+                glyph = smufl::GgClef8va;
+            else if (measure.octave == 2)
+                glyph = smufl::GgClef15ma;
+            else
+                glyph = smufl::GgClef;
             break;
-        case smufl::GfClef:
-        case smufl::GfClef8va:
-        case smufl::GfClef8vb:
-        case smufl::GfClef15ma:
-        case smufl::GfClef15mb:
-        case smufl::GfClefArrowUp:
-        case smufl::GfClefArrowDown:
+        case Score::FClef:
             offset = -noteSize;
+            if (measure.octave == -2)
+                glyph = smufl::GfClef15mb;
+            else if (measure.octave == -1)
+                glyph = smufl::GfClef8vb;
+            else if (measure.octave == 1)
+                glyph = smufl::GfClef8va;
+            else if (measure.octave == 2)
+                glyph = smufl::GfClef15ma;
+            else
+                glyph = smufl::GfClef;
             break;
-        case smufl::GcClef:
-        case smufl::GcClef8vb:
-        case smufl::GcClefArrowUp:
-        case smufl::GcClefArrowDown:
+        case Score::CClef:
+            glyph = smufl::GcClef;
+            offset = -0.5f * measure.transpose * noteSize;
             break;
         default:
             jassertfalse;
-            break;
+            return;
     }
 
-    g.fillPath (clef, juce::AffineTransform::scale (factor * noteSize).translated (centerLine.getX() + xPosition, centerLine.getY() + offset));
+    getGlyph (glyph, path);
+    g.fillPath (path, juce::AffineTransform::scale (factor * noteSize).translated (centerLine.getX() + xPosition, centerLine.getY() + offset));
 
-    const auto bbox = glyphBoxes [type];
+    const auto bbox = glyphBoxes [glyph];
     xPosition += bbox.getWidth() * noteSize;
 }
 
-void ScoreRenderer::drawAccidentals (juce::Graphics& g, int fifth, int transposed, juce::Point<float> centerLine, float& xPosition)
+void ScoreRenderer::drawAccidentals (juce::Graphics& g, const Score::Measure& measure, juce::Point<float> centerLine, float& xPosition)
 {
+    if (measure.fifth == 0)
+        return;
+
+    // g-clef: transpose 0 / f-clef: transpose 5 / c-clef: transpose -1
+
     juce::Path accidental;
-    if (fifth > 0)
+    if (measure.fifth > 0)
     {
         getGlyph (smufl::GaccidentalSharp, accidental);
         const auto bbox = glyphBoxes [smufl::GaccidentalSharp];
-        auto offset = -2.0f - 0.5f * transposed;
+        auto offset = measure.clef == Score::FClef ? -4.5f : measure.clef == Score::CClef ? -1.5f - measure.transpose * 0.5f
+                                                                                          : -2.0f;
         if (offset < -2.5f)
             offset += 3.5f;
 
-        for (int i = 0; i < fifth; ++i)
+        for (int i = 0; i < measure.fifth; ++i)
         {
             g.fillPath (accidental, juce::AffineTransform::scale (factor * noteSize)
                                                           .translated (centerLine + juce::Point<float> (xPosition, offset * noteSize )));
@@ -92,15 +107,16 @@ void ScoreRenderer::drawAccidentals (juce::Graphics& g, int fifth, int transpose
                 offset += 3.5f;
         }
     }
-    else if (fifth < 0)
+    else if (measure.fifth < 0)
     {
         getGlyph (smufl::GaccidentalFlat, accidental);
         const auto bbox = glyphBoxes [smufl::GaccidentalFlat];
-        auto offset = -0.5f * transposed;
+        auto offset = measure.clef == Score::FClef ? -2.5f : measure.clef == Score::CClef ? 0.5f + measure.transpose * 0.5f
+                                                                                          : 0;
         if (offset > 1.5f)
             offset -= 3.5f;
 
-        for (int i = 0; i < -fifth; ++i)
+        for (int i = 0; i < -measure.fifth; ++i)
         {
             g.fillPath (accidental, juce::AffineTransform::scale (factor * noteSize)
                                                           .translated (centerLine + juce::Point<float> (xPosition, offset * noteSize )));
@@ -137,16 +153,16 @@ void ScoreRenderer::drawNotes (juce::Graphics& g, juce::Point<float> centerLine,
         }
 
         // staff down
-        {
-            const auto& anchor = stemDownNW.find (smufl::GnoteheadBlack);
-            if (anchor != stemDownNW.cend())
-            {
-                const auto p = anchor->second;
-                g.fillRect (position.getX() + noteSize * (p.getX()),
-                            position.getY() - noteSize * (p.getY()),
-                            stemThickness * noteSize, 3.5f * noteSize);
-            }
-        }
+//        {
+//            const auto& anchor = stemDownNW.find (smufl::GnoteheadBlack);
+//            if (anchor != stemDownNW.cend())
+//            {
+//                const auto p = anchor->second;
+//                g.fillRect (position.getX() + noteSize * (p.getX()),
+//                            position.getY() - noteSize * (p.getY()),
+//                            stemThickness * noteSize, 3.5f * noteSize);
+//            }
+//        }
     }
 
     g.fillRect (centerLine.getX() + xPositions.getEnd(),

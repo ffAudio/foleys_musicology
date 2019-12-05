@@ -40,22 +40,21 @@ private:
      Draws the clef for a system
 
      @param g           the Graphics context
-     @param type        the type of the clef as glyph
+     @param measure        the measure defines clef and transposition
      @param centerLine  is middle left point of the center
      @param xPosition   is a cursor that will be advanced by the used space of the glyphs
      */
-    void drawClef (juce::Graphics& g, smufl::Glyph type, juce::Point<float> centerLine, float& xPosition);
+    void drawClef (juce::Graphics& g, const Score::Measure& measure, juce::Point<float> centerLine, float& xPosition);
 
     /**
      Draws the accidentals for a bar/staff.
 
      @param g           the Graphics context
-     @param fifth       the number of accidentals in the circle of fifths. Use negative numbers for flat
-     @param transposed  allows to adapt for different clefs, use 0 for G-clefs
+     @param measure       the measure to draw the accidentals from. Uses the fifth and clef property
      @param centerLine  is the middle left point of the center
      @param xPosition   is a cursor that will be advanced by the used space of the glyphs
      */
-    void drawAccidentals (juce::Graphics& g, int fifth, int transposed, juce::Point<float> centerLine, float& xPosition);
+    void drawAccidentals (juce::Graphics& g, const Score::Measure& measure, juce::Point<float> centerLine, float& xPosition);
 
     void drawNotes (juce::Graphics& g, juce::Point<float> centerLine, juce::Range<float> xPositions);
 

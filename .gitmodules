@@ -1,9 +1,3 @@
-[submodule "Fonts/Bravura"]
-	path = Fonts/Bravura
-	url = git@github.com:steinbergmedia/bravura.git
 [submodule "Fonts/SMuFL"]
 	path = Fonts/SMuFL
 	url = git@github.com:w3c/smufl.git
-[submodule "Fonts/Petaluma"]
-	path = Fonts/Petaluma
-	url = git@github.com:steinbergmedia/petaluma.git

@@ -41,9 +41,7 @@
 #include <unordered_map>
 
 #include "Fonts/include/smufl.h"
-#include "Fonts/include/bravura.h"
-#include "Fonts/include/petaluma.h"
 
-#include "Model/foleys_Note.h"
+#include "Model/foleys_Score.h"
 
 #include "Rendering/foleys_ScoreRenderer.h"
