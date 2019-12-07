@@ -73,6 +73,8 @@ public:
 
         int getOffsetFromCentreLine (const Note& note) const;
 
+        std::tuple<int, bool> noteNeedsAccidental (std::vector<Note>::const_iterator note) const;
+
     private:
         JUCE_LEAK_DETECTOR (Measure)
     };

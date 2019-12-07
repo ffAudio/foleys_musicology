@@ -29,9 +29,41 @@ void ScoreRenderer::drawHarmonicStaff (juce::Graphics& g, juce::Rectangle<float>
             xPosition += beamSpacing * noteSize;
         }
 
+        xPosition += noteSize + barlineSeparation + beamSpacing;
+
         drawNotes (g, *measure, centerLine, { xPosition, xPosition + 250.0f });
 
         xPosition += 260.0f;
+
+        auto staffTop = centerLine.getY() - 2.0f * noteSize;
+        auto staffHeight = 4.0f * noteSize;
+
+        auto nextMeasure = measure + 1;
+        if (nextMeasure == part.measures.cend())
+        {
+            g.fillRect (centerLine.getX() + xPosition, staffTop,
+                        thinBarlineThickness * noteSize, staffHeight);
+            xPosition += (thinBarlineThickness + beamSpacing) * noteSize;
+
+            g.fillRect (centerLine.getX() + xPosition, staffTop,
+                        thickBarlineThickness * noteSize, staffHeight);
+            xPosition += thickBarlineThickness * noteSize;
+        }
+        else if (measure->clef != nextMeasure->clef || measure->fifth != nextMeasure->fifth)
+        {
+            g.fillRect (centerLine.getX() + xPosition, staffTop,
+                        thinBarlineThickness * noteSize, staffHeight);
+            xPosition += (thinBarlineThickness + beamSpacing) * noteSize;
+            g.fillRect (centerLine.getX() + xPosition, staffTop,
+                        thinBarlineThickness * noteSize, staffHeight);
+            xPosition += thinBarlineThickness * noteSize;
+        }
+        else
+        {
+            g.fillRect (centerLine.getX() + xPosition, staffTop,
+                        thinBarlineThickness * noteSize, staffHeight);
+            xPosition += thinBarlineThickness * noteSize;
+        }
     }
 }
 
@@ -175,6 +207,39 @@ void ScoreRenderer::drawNotes (juce::Graphics& g, const Score::Measure& measure,
                                                          0.5f * linesOffset * noteSize);
         g.fillPath (noteHead, juce::AffineTransform::scale (factor * noteSize).translated (position));
 
+        juce::Path legerLine;
+        getGlyph (note->duration < 2 ? smufl::GlegerLineWide : smufl::GlegerLine, legerLine);
+        for (int i=6; i <= linesOffset; i += 2)
+        {
+            auto position = centerLine
+                          + juce::Point<float> (xPositions.getStart() + xPosition * xPositions.getLength(),
+                                                0.5f * i * noteSize);
+            g.fillPath (legerLine, juce::AffineTransform::scale (factor * noteSize).translated (position));
+        }
+
+        for (int i=-6; i >= linesOffset; i -= 2)
+        {
+            auto position = centerLine
+                          + juce::Point<float> (xPositions.getStart() + xPosition * xPositions.getLength(),
+                                                0.5f * i * noteSize);
+            g.fillPath (legerLine, juce::AffineTransform::scale (factor * noteSize).translated (position));
+        }
+
+        auto [accidental, needed] = measure.noteNeedsAccidental (note);
+        if (needed)
+        {
+            juce::Path accidentalPath;
+            switch (accidental)
+            {
+                case -2: getGlyph (smufl::GaccidentalDoubleFlat, accidentalPath); break;
+                case -1: getGlyph (smufl::GaccidentalFlat, accidentalPath); break;
+                case 0: getGlyph (smufl::GaccidentalNatural, accidentalPath); break;
+                case 1: getGlyph (smufl::GaccidentalSharp, accidentalPath); break;
+                case 2: getGlyph (smufl::GaccidentalDoubleSharp, accidentalPath); break;
+            }
+            g.fillPath (accidentalPath, juce::AffineTransform::scale (factor * noteSize).translated (position - juce::Point<float>((accidentalPath.getBounds().getWidth() * noteSize + barlineSeparation) * factor, 0)));
+        }
+
         if (note->duration > 1)
         {
             if (linesOffset >= 0)
@@ -203,11 +268,6 @@ void ScoreRenderer::drawNotes (juce::Graphics& g, const Score::Measure& measure,
             }
         }
     }
-
-    g.fillRect (centerLine.getX() + xPositions.getEnd(),
-                centerLine.getY() - 2.0f * noteSize,
-                thinBarlineThickness * noteSize,
-                4.0f * noteSize);
 }
 
 void ScoreRenderer::setFont (juce::Typeface::Ptr typefaceToUse, const juce::var& metadata, float factorToUse)
