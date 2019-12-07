@@ -7,7 +7,7 @@ ScoreRenderer::ScoreRenderer()
 {
 }
 
-void ScoreRenderer::drawHarmonicStaff (juce::Graphics& g, juce::Rectangle<float> bounds)
+void ScoreRenderer::drawHarmonicStaff (juce::Graphics& g, juce::Rectangle<float> bounds, const Score::Part& part)
 {
     for (int i=0; i < 5; ++i)
         g.fillRect (bounds.getX(), bounds.getCentreY() + (i - 2) * noteSize - staffLineThickness * factor * 0.5f, bounds.getWidth(), staffLineThickness * factor);
@@ -15,19 +15,24 @@ void ScoreRenderer::drawHarmonicStaff (juce::Graphics& g, juce::Rectangle<float>
     const auto centerLine = juce::Point<float> (bounds.getX(), bounds.getCentreY());
     auto xPosition = 0.0f;
 
-    juce::ValueTree v;
-    Score::Measure measure (v);
-    measure.clef = Score::CClef;
-    measure.transpose = 0;
-    measure.fifth = -3;
+    for (auto measure = part.measures.cbegin(); measure != part.measures.cend(); ++measure)
+    {
+        if (measure == part.measures.cbegin() || measure->clef != (measure-1)->clef )
+        {
+            drawClef (g, *measure, centerLine, xPosition);
+            xPosition += beamSpacing * noteSize;
+        }
 
-    drawClef (g, measure, centerLine, xPosition);
-    xPosition += beamSpacing * noteSize;
+        if (measure == part.measures.cbegin() || measure->fifth != (measure-1)->fifth )
+        {
+            drawAccidentals (g, *measure, centerLine, xPosition);
+            xPosition += beamSpacing * noteSize;
+        }
 
-    drawAccidentals (g, measure, centerLine, xPosition);
-    xPosition += beamSpacing * noteSize;
+        drawNotes (g, *measure, centerLine, { xPosition, xPosition + 250.0f });
 
-    drawNotes (g, centerLine, { xPosition, xPosition + 250.0f });
+        xPosition += 260.0f;
+    }
 }
 
 void ScoreRenderer::drawClef (juce::Graphics& g, const Score::Measure& measure, juce::Point<float> centerLine, float& xPosition)
@@ -85,15 +90,14 @@ void ScoreRenderer::drawAccidentals (juce::Graphics& g, const Score::Measure& me
     if (measure.fifth == 0)
         return;
 
-    // g-clef: transpose 0 / f-clef: transpose 5 / c-clef: transpose -1
-
     juce::Path accidental;
     if (measure.fifth > 0)
     {
         getGlyph (smufl::GaccidentalSharp, accidental);
         const auto bbox = glyphBoxes [smufl::GaccidentalSharp];
-        auto offset = measure.clef == Score::FClef ? -4.5f : measure.clef == Score::CClef ? -1.5f - measure.transpose * 0.5f
-                                                                                          : -2.0f;
+        auto offset = measure.clef == Score::FClef ? -4.5f
+                                                   : measure.clef == Score::CClef ? -1.5f - measure.transpose * 0.5f
+                                                                                  : -2.0f;
         if (offset < -2.5f)
             offset += 3.5f;
 
@@ -111,8 +115,9 @@ void ScoreRenderer::drawAccidentals (juce::Graphics& g, const Score::Measure& me
     {
         getGlyph (smufl::GaccidentalFlat, accidental);
         const auto bbox = glyphBoxes [smufl::GaccidentalFlat];
-        auto offset = measure.clef == Score::FClef ? -2.5f : measure.clef == Score::CClef ? 0.5f + measure.transpose * 0.5f
-                                                                                          : 0;
+        auto offset = measure.clef == Score::FClef ? -2.5f
+                                                   : measure.clef == Score::CClef ? 0.5f + measure.transpose * 0.5f
+                                                                                  : 0.0f;
         if (offset > 1.5f)
             offset -= 3.5f;
 
@@ -128,41 +133,75 @@ void ScoreRenderer::drawAccidentals (juce::Graphics& g, const Score::Measure& me
     }
 }
 
-void ScoreRenderer::drawNotes (juce::Graphics& g, juce::Point<float> centerLine, juce::Range<float> xPositions)
+void ScoreRenderer::drawNotes (juce::Graphics& g, const Score::Measure& measure, juce::Point<float> centerLine, juce::Range<float> xPositions)
 {
-    juce::Path note;
-    getGlyph (smufl::GnoteheadBlack, note);
-
-    auto distancePerQuarter = xPositions.getLength() / 4.0f;
-
-    for (int i = 0; i < 4; ++i)
+    for (auto note = measure.notes.cbegin(); note != measure.notes.cend(); ++note)
     {
-        auto position = centerLine + juce::Point<float> (xPositions.getStart() + i * distancePerQuarter, 0.0f);
-        g.fillPath (note, juce::AffineTransform::scale (factor * noteSize).translated (position));
-
-        // staff up
+        if (note->note == Score::Note::Rest)
         {
-            const auto& anchor = stemUpSE.find (smufl::GnoteheadBlack);
-            if (anchor != stemUpSE.cend())
-            {
-                const auto p = anchor->second;
-                g.fillRect (position.getX() + noteSize * (p.getX() - stemThickness),
-                            position.getY() - noteSize * (p.getY() + 3.5f),
-                            stemThickness * noteSize, 3.5f * noteSize);
-            }
+            juce::Path rest;
+            auto xPosition = measure.getPotitionOfNote (note);
+            if (note->duration == 1)
+                getGlyph (smufl::GrestWhole, rest);
+            else if (note->duration == 2)
+                getGlyph (smufl::GrestHalf, rest);
+            else if (note->duration == 4)
+                getGlyph (smufl::GrestQuarter, rest);
+            else if (note->duration == 8)
+                getGlyph (smufl::Grest8th, rest);
+            else if (note->duration == 16)
+                getGlyph (smufl::Grest16th, rest);
+            else if (note->duration == 32)
+                getGlyph (smufl::Grest32nd, rest);
+            else if (note->duration == 64)
+                getGlyph (smufl::Grest64th, rest);
+
+            auto position = centerLine + juce::Point<float> (xPositions.getStart() + xPosition * xPositions.getLength(), 0);
+            g.fillPath (rest, juce::AffineTransform::scale (factor * noteSize).translated (position));
+            continue;
         }
 
-        // staff down
-//        {
-//            const auto& anchor = stemDownNW.find (smufl::GnoteheadBlack);
-//            if (anchor != stemDownNW.cend())
-//            {
-//                const auto p = anchor->second;
-//                g.fillRect (position.getX() + noteSize * (p.getX()),
-//                            position.getY() - noteSize * (p.getY()),
-//                            stemThickness * noteSize, 3.5f * noteSize);
-//            }
-//        }
+        juce::Path noteHead;
+        if (note->duration >= 3)
+            getGlyph (smufl::GnoteheadBlack, noteHead);
+        else if (note->duration == 2)
+            getGlyph (smufl::GnoteheadHalf, noteHead);
+        else if (note->duration == 1)
+            getGlyph (smufl::GnoteheadWhole, noteHead);
+
+        auto xPosition = measure.getPotitionOfNote (note);
+        auto linesOffset = measure.getOffsetFromCentreLine (*note);
+        auto position = centerLine + juce::Point<float> (xPositions.getStart() + xPosition * xPositions.getLength(),
+                                                         0.5f * linesOffset * noteSize);
+        g.fillPath (noteHead, juce::AffineTransform::scale (factor * noteSize).translated (position));
+
+        if (note->duration > 1)
+        {
+            if (linesOffset >= 0)
+            {
+                // staff up
+                const auto& anchor = stemUpSE.find (smufl::GnoteheadBlack);
+                if (anchor != stemUpSE.cend())
+                {
+                    const auto p = anchor->second;
+                    g.fillRect (position.getX() + noteSize * (p.getX() - stemThickness),
+                                position.getY() - noteSize * (p.getY() + 3.5f),
+                                stemThickness * noteSize, 3.5f * noteSize);
+                }
+            }
+            else
+            {
+                // staff down
+                const auto& anchor = stemDownNW.find (smufl::GnoteheadBlack);
+                if (anchor != stemDownNW.cend())
+                {
+                    const auto p = anchor->second;
+                    g.fillRect (position.getX() + noteSize * (p.getX()),
+                                position.getY() - noteSize * (p.getY()),
+                                stemThickness * noteSize, 3.5f * noteSize);
+                }
+            }
+        }
     }
 
     g.fillRect (centerLine.getX() + xPositions.getEnd(),

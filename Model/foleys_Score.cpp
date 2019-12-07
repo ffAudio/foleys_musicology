@@ -16,21 +16,32 @@ std::unique_ptr<Score> Score::fromMusicXml (juce::XmlElement& xml)
 
 //==============================================================================
 
-Score::Note::Note (juce::ValueTree& tree)
-{
 
+//==============================================================================
+
+Score::Measure::Measure()
+{
+}
+
+float Score::Measure::getPotitionOfNote (std::vector<Note>::const_iterator note) const
+{
+    return std::distance (notes.cbegin(), note) / float (notes.size());
+}
+
+int Score::Measure::getOffsetFromCentreLine (const Note& note) const
+{
+    if (note.note == Note::Rest)
+        return 0;
+
+    int offset = clef == CClef ? transpose + 1
+                               : clef == FClef ? -5 : 0;
+
+    return offset - (note.octave - 5) * 7 - int (note.note);
 }
 
 //==============================================================================
 
-Score::Measure::Measure (juce::ValueTree& tree)
-{
-
-}
-
-//==============================================================================
-
-Score::Part::Part (juce::ValueTree& tree)
+Score::Part::Part()
 {
 
 }

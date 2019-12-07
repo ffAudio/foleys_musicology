@@ -10,7 +10,7 @@ public:
 
     ScoreRenderer();
 
-    void drawHarmonicStaff (juce::Graphics&, juce::Rectangle<float> bounds);
+    void drawHarmonicStaff (juce::Graphics&, juce::Rectangle<float> bounds, const Score::Part& part);
 
     /**
      Set the SMuFL font for rendering
@@ -56,7 +56,7 @@ private:
      */
     void drawAccidentals (juce::Graphics& g, const Score::Measure& measure, juce::Point<float> centerLine, float& xPosition);
 
-    void drawNotes (juce::Graphics& g, juce::Point<float> centerLine, juce::Range<float> xPositions);
+    void drawNotes (juce::Graphics& g, const Score::Measure& measure, juce::Point<float> centerLine, juce::Range<float> xPositions);
 
     float noteSize = 12.0f;
     float factor   = 16.0f;

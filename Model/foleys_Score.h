@@ -22,12 +22,31 @@ public:
 
     //==============================================================================
 
-    class Note
+    struct Note
     {
-    public:
-        Note (juce::ValueTree& tree);
-    private:
-        JUCE_LEAK_DETECTOR (Note)
+        enum NoteName
+        {
+            Rest = 0,
+            C, D, E, F, G, A, B
+        };
+
+        /** note counting from C, 0=rest */
+        NoteName note   = Rest;
+
+        /** octave on piano (4: keyhole) */
+        uint8_t octave = 4;
+
+        /** positive: number of sharps, negative: number of flats */
+        int8_t accidentals = 0;
+
+        /** duration: 4=quarter, 0=brevis */
+        uint8_t duration = 4;
+
+        /** tuple: number of notes to make the next duration */
+        uint8_t tuple = 2;
+
+        /** dotted */
+        uint8_t dotted = 0;
     };
 
     //==============================================================================
@@ -35,17 +54,26 @@ public:
     class Measure
     {
     public:
-        Measure (juce::ValueTree& tree);
+        Measure();
 
         Clef clef      = GClef;
-        int  octave    = 0;
-        int  transpose = 0;  // used for C-clefs
+
+        /** Relative octave of the clef */
+        int8_t  octave    = 0;
+
+        /** C-clef can be used on any transposition. 0=centre line */
+        int8_t  transpose = 0;
 
         /** scale in the circle of fifths, positive for sharps, negative for flats */
-        int  fifth     = 0;
+        int8_t  fifth     = 0;
+
+        std::vector<Note> notes;
+
+        float getPotitionOfNote (std::vector<Note>::const_iterator note) const;
+
+        int getOffsetFromCentreLine (const Note& note) const;
 
     private:
-        std::vector<Note> notes;
         JUCE_LEAK_DETECTOR (Measure)
     };
 
@@ -54,10 +82,11 @@ public:
     class Part
     {
     public:
-        Part (juce::ValueTree& tree);
+        Part();
+
+        std::vector<Measure> measures;
 
     private:
-        std::vector<Measure> measures;
         JUCE_LEAK_DETECTOR (Part)
     };
 
