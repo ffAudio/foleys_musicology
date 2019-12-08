@@ -35,10 +35,10 @@ void ScoreRenderer::drawHarmonicStaff (juce::Graphics& g, juce::Rectangle<float>
 
         xPosition += 260.0f;
 
-        auto staffTop = centerLine.getY() - 2.0f * noteSize;
-        auto staffHeight = 4.0f * noteSize;
+        const auto staffTop = centerLine.getY() - 2.0f * noteSize;
+        const auto staffHeight = 4.0f * noteSize;
 
-        auto nextMeasure = measure + 1;
+        const auto nextMeasure = measure + 1;
         if (nextMeasure == part.measures.cend())
         {
             g.fillRect (centerLine.getX() + xPosition, staffTop,
@@ -70,7 +70,6 @@ void ScoreRenderer::drawHarmonicStaff (juce::Graphics& g, juce::Rectangle<float>
 void ScoreRenderer::drawClef (juce::Graphics& g, const Score::Measure& measure, juce::Point<float> centerLine, float& xPosition)
 {
     float        offset = 0.0f;
-    juce::Path   path;
     smufl::Glyph glyph;
 
     switch (measure.clef)
@@ -110,8 +109,7 @@ void ScoreRenderer::drawClef (juce::Graphics& g, const Score::Measure& measure, 
             return;
     }
 
-    getGlyph (glyph, path);
-    g.fillPath (path, juce::AffineTransform::scale (factor * noteSize).translated (centerLine.getX() + xPosition, centerLine.getY() + offset));
+    g.fillPath (getGlyph (glyph), juce::AffineTransform::scale (factor * noteSize).translated (centerLine.getX() + xPosition, centerLine.getY() + offset));
 
     const auto bbox = glyphBoxes [glyph];
     xPosition += bbox.getWidth() * noteSize;
@@ -122,10 +120,12 @@ void ScoreRenderer::drawAccidentals (juce::Graphics& g, const Score::Measure& me
     if (measure.fifth == 0)
         return;
 
-    juce::Path accidental;
+    const auto scale = juce::AffineTransform::scale (factor * noteSize);
+    xPosition += barlineSeparation * noteSize;
+
     if (measure.fifth > 0)
     {
-        getGlyph (smufl::GaccidentalSharp, accidental);
+        const auto accidental = getGlyph (smufl::GaccidentalSharp);
         const auto bbox = glyphBoxes [smufl::GaccidentalSharp];
         auto offset = measure.clef == Score::FClef ? -4.5f
                                                    : measure.clef == Score::CClef ? -1.5f - measure.transpose * 0.5f
@@ -135,8 +135,7 @@ void ScoreRenderer::drawAccidentals (juce::Graphics& g, const Score::Measure& me
 
         for (int i = 0; i < measure.fifth; ++i)
         {
-            g.fillPath (accidental, juce::AffineTransform::scale (factor * noteSize)
-                                                          .translated (centerLine + juce::Point<float> (xPosition, offset * noteSize )));
+            g.fillPath (accidental, scale.translated (centerLine + juce::Point<float> (xPosition, offset * noteSize )));
             xPosition += bbox.getWidth() * noteSize;
             offset -= 2.0f;
             if (offset < -2.5f)
@@ -145,7 +144,7 @@ void ScoreRenderer::drawAccidentals (juce::Graphics& g, const Score::Measure& me
     }
     else if (measure.fifth < 0)
     {
-        getGlyph (smufl::GaccidentalFlat, accidental);
+        const auto accidental = getGlyph (smufl::GaccidentalFlat);
         const auto bbox = glyphBoxes [smufl::GaccidentalFlat];
         auto offset = measure.clef == Score::FClef ? -2.5f
                                                    : measure.clef == Score::CClef ? 0.5f + measure.transpose * 0.5f
@@ -155,18 +154,21 @@ void ScoreRenderer::drawAccidentals (juce::Graphics& g, const Score::Measure& me
 
         for (int i = 0; i < -measure.fifth; ++i)
         {
-            g.fillPath (accidental, juce::AffineTransform::scale (factor * noteSize)
-                                                          .translated (centerLine + juce::Point<float> (xPosition, offset * noteSize )));
+            g.fillPath (accidental, scale.translated (centerLine + juce::Point<float> (xPosition, offset * noteSize )));
             xPosition += bbox.getWidth() * noteSize;
             offset += 2.0f;
             if (offset > 1.5f)
                 offset -= 3.5f;
         }
     }
+
+    xPosition += barlineSeparation * noteSize;
 }
 
 void ScoreRenderer::drawNotes (juce::Graphics& g, const Score::Measure& measure, juce::Point<float> centerLine, juce::Range<float> xPositions)
 {
+    const auto scale = juce::AffineTransform::scale (factor * noteSize);
+
     for (auto note = measure.notes.cbegin(); note != measure.notes.cend(); ++note)
     {
         if (note->note == Score::Note::Rest)
@@ -189,7 +191,7 @@ void ScoreRenderer::drawNotes (juce::Graphics& g, const Score::Measure& measure,
                 getGlyph (smufl::Grest64th, rest);
 
             auto position = centerLine + juce::Point<float> (xPositions.getStart() + xPosition * xPositions.getLength(), 0);
-            g.fillPath (rest, juce::AffineTransform::scale (factor * noteSize).translated (position));
+            g.fillPath (rest, scale.translated (position));
             continue;
         }
 
@@ -205,7 +207,7 @@ void ScoreRenderer::drawNotes (juce::Graphics& g, const Score::Measure& measure,
         auto linesOffset = measure.getOffsetFromCentreLine (*note);
         auto position = centerLine + juce::Point<float> (xPositions.getStart() + xPosition * xPositions.getLength(),
                                                          0.5f * linesOffset * noteSize);
-        g.fillPath (noteHead, juce::AffineTransform::scale (factor * noteSize).translated (position));
+        g.fillPath (noteHead, scale.translated (position));
 
         juce::Path legerLine;
         getGlyph (note->duration < 2 ? smufl::GlegerLineWide : smufl::GlegerLine, legerLine);
@@ -214,7 +216,7 @@ void ScoreRenderer::drawNotes (juce::Graphics& g, const Score::Measure& measure,
             auto position = centerLine
                           + juce::Point<float> (xPositions.getStart() + xPosition * xPositions.getLength(),
                                                 0.5f * i * noteSize);
-            g.fillPath (legerLine, juce::AffineTransform::scale (factor * noteSize).translated (position));
+            g.fillPath (legerLine, scale.translated (position));
         }
 
         for (int i=-6; i >= linesOffset; i -= 2)
@@ -222,7 +224,7 @@ void ScoreRenderer::drawNotes (juce::Graphics& g, const Score::Measure& measure,
             auto position = centerLine
                           + juce::Point<float> (xPositions.getStart() + xPosition * xPositions.getLength(),
                                                 0.5f * i * noteSize);
-            g.fillPath (legerLine, juce::AffineTransform::scale (factor * noteSize).translated (position));
+            g.fillPath (legerLine, scale.translated (position));
         }
 
         auto [accidental, needed] = measure.noteNeedsAccidental (note);
@@ -237,7 +239,7 @@ void ScoreRenderer::drawNotes (juce::Graphics& g, const Score::Measure& measure,
                 case 1: getGlyph (smufl::GaccidentalSharp, accidentalPath); break;
                 case 2: getGlyph (smufl::GaccidentalDoubleSharp, accidentalPath); break;
             }
-            g.fillPath (accidentalPath, juce::AffineTransform::scale (factor * noteSize).translated (position - juce::Point<float>((accidentalPath.getBounds().getWidth() * noteSize + barlineSeparation) * factor, 0)));
+            g.fillPath (accidentalPath, scale.translated (position - juce::Point<float>((accidentalPath.getBounds().getWidth() * noteSize + barlineSeparation) * factor, 0)));
         }
 
         if (note->duration > 1)
@@ -252,6 +254,11 @@ void ScoreRenderer::drawNotes (juce::Graphics& g, const Score::Measure& measure,
                     g.fillRect (position.getX() + noteSize * (p.getX() - stemThickness),
                                 position.getY() - noteSize * (p.getY() + 3.5f),
                                 stemThickness * noteSize, 3.5f * noteSize);
+
+                    if (note->duration == 8)
+                        g.fillPath (getGlyph (smufl::Gflag8thUp), scale.translated (position.getX() + noteSize * (p.getX() - stemThickness), position.getY() - noteSize * (p.getY() + 3.5f)));
+                    else if (note->duration == 16)
+                        g.fillPath (getGlyph (smufl::Gflag16thUp), scale.translated (position.getX() + noteSize * (p.getX() - stemThickness), position.getY() - noteSize * (p.getY() + 3.5f)));
                 }
             }
             else
@@ -264,6 +271,11 @@ void ScoreRenderer::drawNotes (juce::Graphics& g, const Score::Measure& measure,
                     g.fillRect (position.getX() + noteSize * (p.getX()),
                                 position.getY() - noteSize * (p.getY()),
                                 stemThickness * noteSize, 3.5f * noteSize);
+
+                    if (note->duration == 8)
+                        g.fillPath (getGlyph (smufl::Gflag8thDown), scale.translated (position.getX() + noteSize * p.getX(), position.getY() + noteSize * (3.5f - p.getY())));
+                    else if (note->duration == 16)
+                        g.fillPath (getGlyph (smufl::Gflag16thDown), scale.translated (position.getX() + noteSize * p.getX(), position.getY() + noteSize * (3.5f - p.getY())));
                 }
             }
         }
@@ -369,7 +381,7 @@ void ScoreRenderer::setNoteSize (float size)
     noteSize = size;
 }
 
-bool ScoreRenderer::getGlyph (smufl::Glyph glyph, juce::Path& path)
+bool ScoreRenderer::getGlyph (smufl::Glyph glyph, juce::Path& path) const
 {
     juce::Array<int> glyphs;
     juce::Array<float> xOffsets;
@@ -381,6 +393,13 @@ bool ScoreRenderer::getGlyph (smufl::Glyph glyph, juce::Path& path)
     }
 
     return false;
+}
+
+juce::Path ScoreRenderer::getGlyph (smufl::Glyph glyph) const
+{
+    juce::Path p;
+    getGlyph (glyph, p);
+    return p;
 }
 
 } // namespace foleys

@@ -34,7 +34,14 @@ private:
      @param glyph   the SMuFL enum for the requested glyph
      @param path    the outline of the glyph will be returned here
      */
-    bool getGlyph (smufl::Glyph glyph, juce::Path& path);
+    bool getGlyph (smufl::Glyph glyph, juce::Path& path) const;
+
+    /**
+     Returns the glyph for a SMuFL code
+
+     @param glyph the SMuFL enum for the requested glyph
+     */
+    juce::Path getGlyph (smufl::Glyph glyph) const;
 
     /**
      Draws the clef for a system
