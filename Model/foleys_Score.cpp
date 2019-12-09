@@ -23,7 +23,7 @@ Score::Measure::Measure()
 {
 }
 
-float Score::Measure::getPotitionOfNote (std::vector<Note>::const_iterator note) const
+float Score::Measure::getPositionOfNote (std::vector<Note>::const_iterator note) const
 {
     return std::distance (notes.cbegin(), note) / float (notes.size());
 }
@@ -117,13 +117,13 @@ std::tuple<int, bool> Score::Measure::noteNeedsAccidental (std::vector<Note>::co
 
         case Note::B:
             if (note->accidentals == 0)
-                return {note->accidentals, fifth >= 6 || fifth <= -2};
+                return {note->accidentals, fifth >= 7 || fifth <= -1};
             else if (note->accidentals == 1)
-                return {note->accidentals, fifth < 6};
+                return {note->accidentals, fifth < 7};
             else if (note->accidentals == 2)
                 return {note->accidentals, true};
             else if (note->accidentals == -1)
-                return {note->accidentals, fifth > -2};
+                return {note->accidentals, fifth > -1};
             else if (note->accidentals == -2)
                 return {note->accidentals, true};
 

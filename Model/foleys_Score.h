@@ -69,8 +69,10 @@ public:
 
         std::vector<Note> notes;
 
-        float getPotitionOfNote (std::vector<Note>::const_iterator note) const;
+        /** returns the x position of a note inside a measure */
+        float getPositionOfNote (std::vector<Note>::const_iterator note) const;
 
+        /** Returns the number of half staff lines from the middle saff */
         int getOffsetFromCentreLine (const Note& note) const;
 
         std::tuple<int, bool> noteNeedsAccidental (std::vector<Note>::const_iterator note) const;

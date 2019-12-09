@@ -26,6 +26,11 @@ public:
      */
     void setNoteSize (float size);
 
+    /**
+     Set the size of a measure (exclusive accidentals, clef, etc.)
+     */
+    void setMeasureSize (float size);
+
 private:
 
     /**
@@ -65,8 +70,9 @@ private:
 
     void drawNotes (juce::Graphics& g, const Score::Measure& measure, juce::Point<float> centerLine, juce::Range<float> xPositions);
 
-    float noteSize = 12.0f;
-    float factor   = 16.0f;
+    float noteSize    = 12.0f;
+    float factor      = 16.0f;
+    float measureSize = 250.0f;
 
     juce::Typeface::Ptr typeface;
 
