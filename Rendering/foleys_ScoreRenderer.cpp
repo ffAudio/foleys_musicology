@@ -20,6 +20,12 @@ void ScoreRenderer::drawHarmonicStaff (juce::Graphics& g, juce::Rectangle<float>
             xPosition += beamSpacing * noteSize;
         }
 
+        if (measure == part.measures.cbegin() || measure->signature != (measure-1)->signature )
+        {
+            drawTimeSignature (g, *measure, centerLine, xPosition);
+            xPosition += beamSpacing * noteSize;
+        }
+
         if (measure == part.measures.cbegin() || measure->fifth != (measure-1)->fifth )
         {
             drawAccidentals (g, *measure, centerLine, xPosition);
@@ -113,6 +119,12 @@ void ScoreRenderer::drawClef (juce::Graphics& g, const Score::Measure& measure, 
 
     const auto bbox = glyphBoxes [glyph];
     xPosition += bbox.getWidth() * noteSize;
+}
+
+void ScoreRenderer::drawTimeSignature (juce::Graphics& g, const Score::Measure& measure, juce::Point<float> centerLine, float& xPosition)
+{
+    
+    
 }
 
 void ScoreRenderer::drawAccidentals (juce::Graphics& g, const Score::Measure& measure, juce::Point<float> centerLine, float& xPosition)

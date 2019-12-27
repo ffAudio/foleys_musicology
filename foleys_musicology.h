@@ -44,4 +44,5 @@
 
 #include "Model/foleys_Score.h"
 
+#include "Rendering/foleys_NoteArrangement.h"
 #include "Rendering/foleys_ScoreRenderer.h"

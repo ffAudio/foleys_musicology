@@ -4,4 +4,5 @@
 
 #include "Model/foleys_Score.cpp"
 
+#include "Rendering/foleys_NoteArrangement.cpp"
 #include "Rendering/foleys_ScoreRenderer.cpp"

@@ -58,6 +58,8 @@ private:
      */
     void drawClef (juce::Graphics& g, const Score::Measure& measure, juce::Point<float> centerLine, float& xPosition);
 
+    void drawTimeSignature (juce::Graphics& g, const Score::Measure& measure, juce::Point<float> centerLine, float& xPosition);
+
     /**
      Draws the accidentals for a bar/staff.
 

@@ -47,6 +47,8 @@ public:
 
         /** dotted */
         uint8_t dotted = 0;
+
+        static Note fromNoteNumber (int noteNumber, bool preferFlat=false);
     };
 
     //==============================================================================
@@ -67,6 +69,9 @@ public:
         /** scale in the circle of fifths, positive for sharps, negative for flats */
         int8_t  fifth     = 0;
 
+        /** Time signature, first: enumerator, second: denominator */
+        std::pair<int8_t, int8_t> signature = { 4, 4 };
+
         std::vector<Note> notes;
 
         /** returns the x position of a note inside a measure */
@@ -76,6 +81,9 @@ public:
         int getOffsetFromCentreLine (const Note& note) const;
 
         std::tuple<int, bool> noteNeedsAccidental (std::vector<Note>::const_iterator note) const;
+
+        double calculateNotesDuration();
+        double calculateMeasureDuration();
 
     private:
         JUCE_LEAK_DETECTOR (Measure)
