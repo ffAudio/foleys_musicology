@@ -17,7 +17,7 @@ public:
         FClef
     };
 
-    Score (juce::ValueTree& tree);
+    Score() = default;
     static std::unique_ptr<Score> fromMusicXml (juce::XmlElement& xml);
 
     //==============================================================================
@@ -48,6 +48,8 @@ public:
         /** dotted */
         uint8_t dotted = 0;
 
+        int getNoteNumber() const;
+
         static Note fromNoteNumber (int noteNumber, bool preferFlat=false);
     };
 
@@ -70,7 +72,7 @@ public:
         int8_t  fifth     = 0;
 
         /** Time signature, first: enumerator, second: denominator */
-        std::pair<int8_t, int8_t> signature = { 4, 4 };
+        std::pair<uint8_t, uint8_t> signature = { 4, 4 };
 
         std::vector<Note> notes;
 

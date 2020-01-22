@@ -25,13 +25,17 @@ public:
      Set the note size
      */
     void setNoteSize (float size);
+    float getNoteSize() const;
+
+    /**
+     returns the factor to apply
+     */
+    float getFactor() const;
 
     /**
      Set the size of a measure (exclusive accidentals, clef, etc.)
      */
     void setMeasureSize (float size);
-
-private:
 
     /**
      Look up the glyph from the Typeface from the SMuFL glyph
@@ -49,26 +53,14 @@ private:
     juce::Path getGlyph (smufl::Glyph glyph) const;
 
     /**
-     Draws the clef for a system
+     returns the bounding box as defined in the fonts metadata for the glyph
 
-     @param g           the Graphics context
-     @param measure        the measure defines clef and transposition
-     @param centerLine  is middle left point of the center
-     @param xPosition   is a cursor that will be advanced by the used space of the glyphs
+     @param glyph the SMuFL enum for the requested bounding box
      */
-    void drawClef (juce::Graphics& g, const Score::Measure& measure, juce::Point<float> centerLine, float& xPosition);
+    juce::Rectangle<float> getGlyphBox (smufl::Glyph glyph) const;
 
-    void drawTimeSignature (juce::Graphics& g, const Score::Measure& measure, juce::Point<float> centerLine, float& xPosition);
+private:
 
-    /**
-     Draws the accidentals for a bar/staff.
-
-     @param g           the Graphics context
-     @param measure       the measure to draw the accidentals from. Uses the fifth and clef property
-     @param centerLine  is the middle left point of the center
-     @param xPosition   is a cursor that will be advanced by the used space of the glyphs
-     */
-    void drawAccidentals (juce::Graphics& g, const Score::Measure& measure, juce::Point<float> centerLine, float& xPosition);
 
     void drawNotes (juce::Graphics& g, const Score::Measure& measure, juce::Point<float> centerLine, juce::Range<float> xPositions);
 
