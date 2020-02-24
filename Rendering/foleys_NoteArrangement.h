@@ -11,10 +11,28 @@ class NoteArrangement
 public:
     NoteArrangement() = default;
 
+    /**
+     Call this if you want a clef to be displayed, i.e. at the first measure of a stave or if the clef has changed.
+
+     @param renderer the renderer to get the settings and glyphs from
+     @param measure the measure to get the clef from
+     */
     void addClef (const ScoreRenderer& renderer, const Score::Measure& measure);
 
+    /**
+     Call this if you want the time signature to be displayed, i.e. at the first measure of a stave or if the time signature has changed.
+
+     @param renderer the renderer to get the settings and glyphs from
+     @param measure the measure to get the clef from
+     */
     void addTimeSignature (const ScoreRenderer& renderer, const Score::Measure& measure);
 
+    /**
+     Call this if you want the accidentals to be displayed, i.e. at the first measure of a stave or if the accidentals have changed.
+
+     @param renderer the renderer to get the settings and glyphs from
+     @param measure the measure to get the clef from
+     */
     void addAccidentals (const ScoreRenderer& renderer, const Score::Measure& measure);
 
     /**
